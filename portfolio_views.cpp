@@ -1,0 +1,35 @@
+#include "portfolio_views.h"
+#include "portfolio.h"
+
+namespace PortfolioViews
+{
+    std::vector<const FinancialInstrument*> getByValue(const Portfolio& portfolio, bool ascending = true)
+    {
+        auto valueFunction = InstrumentFunctions::valueFunction;
+        return details::getSortedInstrumentByFunc(portfolio, valueFunction, ascending);
+    }
+
+    std::vector<const FinancialInstrument*> getByReturn(const Portfolio& portfolio, bool ascending = true)
+    {
+        auto returnFunction = InstrumentFunctions::returnFunction;
+        return details::getSortedInstrumentByFunc(portfolio, returnFunction, ascending);
+    }
+
+    std::vector<const FinancialInstrument*> getByReturn(const Portfolio& portfolio, Years holdingPeriod, bool ascending = true)
+    {
+        auto returnFunction = InstrumentFunctions::holdingPeriodReturnFunction(holdingPeriod);
+        return details::getSortedInstrumentByFunc(portfolio, returnFunction, ascending);
+    }
+
+    std::vector<const FinancialInstrument*> getByID(const Portfolio& portfolio, bool ascending = true)
+    {
+        auto idFunction = InstrumentFunctions::idFunction;
+        return details::getSortedInstrumentByFunc(portfolio, idFunction, ascending);
+    }
+
+    std::vector<const FinancialInstrument*> getByName(const Portfolio& portfolio, bool lettersAtoZ = true)
+    {
+        auto nameFunction = InstrumentFunctions::nameFunction;
+        return details::getSortedInstrumentByFunc(portfolio, nameFunction, lettersAtoZ);
+    }
+}
