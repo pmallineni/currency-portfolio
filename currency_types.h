@@ -14,6 +14,6 @@ struct Currency
 template <const Currency& Instance> 
 struct CurrencyTag
 {
-    static constexpr Currency& instance = Instance;
+    static constexpr const Currency& instance = Instance;
 };
 

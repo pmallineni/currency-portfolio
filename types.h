@@ -22,6 +22,28 @@ using Pip = std::int64_t;
 using Years = double;
 
 
+class  RuntimeMonetaryAmount
+{
+public: 
+    
+    RuntimeMonetaryAmount(Pip p, const Currency& c) : pipAmount(p), currency(&c) {}
+    Pip getPipAmount() const noexcept { return pipAmount; }
+    const Currency& getCurrency() const noexcept { return *currency; }
+
+    // TODO implement currency conversion
+    RuntimeMonetaryAmount convertedTo(const Currency& targetCurrency) const
+    {
+        if (currency == &targetCurrency) return *this;
+        else throw std::runtime_error("Currency conversion not implemented yet");
+    }
+
+private: 
+    Pip pipAmount;
+    const Currency* currency;
+};
+
+
+
 template <typename T_CurrencyTag>
 class MonetaryAmount
 {     
@@ -29,18 +51,22 @@ public:
 
     explicit constexpr MonetaryAmount(Pip p) : pipAmount(p) {}
     Pip getPipAmount() const noexcept { return pipAmount; } 
-    constexpr Currency& getCurrency() const noexcept { return currency; }    
+    constexpr const Currency& getCurrency() const noexcept { return currency; }    
     
     // TODO: Implement a more accurate percentage calculation that factors in the currency's unitPips and rounding rules for the specific currency
     // If making changes, make change to RuntimeMonetaryAmount::percentOf
     constexpr MonetaryAmount percentOf(double percentage) const { 
         Pip newPipAmount = static_cast<Pip>(std::floor(pipAmount * percentage));
-        return {newPipAmount};
+        return MonetaryAmount{newPipAmount};
     }
 
-    constexpr MonetaryAmount operator+(const MonetaryAmount& m) const { return {pipAmount + m.pipAmount}; }      
-    constexpr MonetaryAmount operator-(const MonetaryAmount& m) const { return {pipAmount - m.pipAmount}; }      
-    constexpr MonetaryAmount operator*(const MonetaryAmount& m) const { return {pipAmount * m.pipAmount}; }     
+    // implicitly converts to RuntimeMonetaryAmount for mixed operations
+    operator RuntimeMonetaryAmount() const noexcept { return RuntimeMonetaryAmount{pipAmount, currency};}
+
+
+    constexpr MonetaryAmount operator+(const MonetaryAmount& m) const { return MonetaryAmount{pipAmount + m.pipAmount}; }      
+    constexpr MonetaryAmount operator-(const MonetaryAmount& m) const { return MonetaryAmount{pipAmount - m.pipAmount}; }      
+    constexpr MonetaryAmount operator*(const MonetaryAmount& m) const { return MonetaryAmount{pipAmount * m.pipAmount}; }     
     
     constexpr MonetaryAmount operator*(double percentage) const { return percentOf(percentage); }      
     friend constexpr MonetaryAmount operator*(double percentage, const MonetaryAmount& m) { return m.percentOf(percentage); }
@@ -48,7 +74,6 @@ public:
     constexpr MonetaryAmount& operator+=(const MonetaryAmount& m) { pipAmount += m.pipAmount; return *this; }      
     constexpr MonetaryAmount& operator-=(const MonetaryAmount& m) { pipAmount -= m.pipAmount; return *this; }      
     constexpr MonetaryAmount& operator*=(const MonetaryAmount& m) { pipAmount *= m.pipAmount; return *this; }      
-
 
     friend bool operator==(const MonetaryAmount& lhs, const MonetaryAmount& rhs) noexcept {
         return lhs.pipAmount == rhs.pipAmount;
@@ -71,28 +96,7 @@ public:
 
 private:     
     Pip pipAmount;
-    static constexpr Currency& currency = T_CurrencyTag::instance;
-};
-
-
-class  RuntimeMonetaryAmount
-{
-public: 
-    
-    RuntimeMonetaryAmount(Pip p, const Currency& c) : pipAmount(p), currency(c) {}
-    Pip getPipAmount() const noexcept { return pipAmount; }
-    const Currency& getCurrency() const noexcept { return currency; }
-
-    // TODO implement currency conversion
-    RuntimeMonetaryAmount convertedTo(const Currency& targetCurrency) const
-    {
-        if (&currency == &targetCurrency) return *this;
-        else throw std::runtime_error("Currency conversion not implemented yet");
-    }
-
-private: 
-    Pip pipAmount;
-    const Currency& currency;
+    static constexpr const Currency& currency = T_CurrencyTag::instance;
 };
 /*
     constexpr MonetaryAmount operator+(const MonetaryAmount& m) const { return {pipAmount + m.pipAmount}; }      
@@ -162,6 +166,12 @@ inline bool operator==(const RuntimeMonetaryAmount& lhs, const RuntimeMonetaryAm
     validateCurrency(lhs, rhs);
     return lhs.getPipAmount() == rhs.getPipAmount();
 }
+
+inline bool operator!=(const RuntimeMonetaryAmount& lhs, const RuntimeMonetaryAmount& rhs)
+{
+    validateCurrency(lhs, rhs);
+    return lhs.getPipAmount() == rhs.getPipAmount();
+}
 inline bool operator<(const RuntimeMonetaryAmount& lhs, const RuntimeMonetaryAmount& rhs)
 {
     validateCurrency(lhs, rhs);
@@ -181,4 +191,118 @@ inline bool operator>=(const RuntimeMonetaryAmount& lhs, const RuntimeMonetaryAm
 {
     validateCurrency(lhs, rhs);
     return !(lhs < rhs);
+}
+
+// Mixed operations boilerplate
+// Because RuntimeMonetaryAmount and MonetaryAmount are fundamentally different
+// inheritance is very messy (and not worth it)
+// because of this, a lot more boilerplate is required though
+
+template <typename T_CurrencyTag>
+inline RuntimeMonetaryAmount operator+(const RuntimeMonetaryAmount& lhs, const MonetaryAmount<T_CurrencyTag>& rhs)
+{
+    return lhs + static_cast<RuntimeMonetaryAmount>(rhs);
+}
+
+template <typename T_CurrencyTag>
+inline RuntimeMonetaryAmount operator+(const MonetaryAmount<T_CurrencyTag>& lhs, const RuntimeMonetaryAmount& rhs)
+{
+    return static_cast<RuntimeMonetaryAmount>(lhs) + rhs;
+}
+
+template <typename T_CurrencyTag>
+inline RuntimeMonetaryAmount operator-(const RuntimeMonetaryAmount& lhs, const MonetaryAmount<T_CurrencyTag>& rhs)
+{
+    return lhs - static_cast<RuntimeMonetaryAmount>(rhs);
+}
+
+template <typename T_CurrencyTag>
+inline RuntimeMonetaryAmount operator-(const MonetaryAmount<T_CurrencyTag>& lhs, const RuntimeMonetaryAmount& rhs)
+{
+    return static_cast<RuntimeMonetaryAmount>(lhs) - rhs;
+}
+
+template <typename T_CurrencyTag>
+inline RuntimeMonetaryAmount operator*(const RuntimeMonetaryAmount& lhs, const MonetaryAmount<T_CurrencyTag>& rhs)
+{
+    return lhs * static_cast<RuntimeMonetaryAmount>(rhs);
+}
+
+template <typename T_CurrencyTag>
+inline RuntimeMonetaryAmount operator*(const MonetaryAmount<T_CurrencyTag>& lhs, const RuntimeMonetaryAmount& rhs)
+{
+    return static_cast<RuntimeMonetaryAmount>(lhs) * rhs;
+}
+
+template <typename T_CurrencyTag>
+inline bool operator==(const RuntimeMonetaryAmount& lhs, const MonetaryAmount<T_CurrencyTag>& rhs)
+{
+    return lhs == static_cast<RuntimeMonetaryAmount>(rhs);
+}
+
+template <typename T_CurrencyTag>
+inline bool operator==(const MonetaryAmount<T_CurrencyTag>& lhs, const RuntimeMonetaryAmount& rhs)
+{
+    return static_cast<RuntimeMonetaryAmount>(lhs) == rhs;
+}
+
+template <typename T_CurrencyTag>
+inline bool operator!=(const RuntimeMonetaryAmount& lhs, const MonetaryAmount<T_CurrencyTag>& rhs)
+{
+    return lhs != static_cast<RuntimeMonetaryAmount>(rhs);
+}
+
+template <typename T_CurrencyTag>
+inline bool operator!=(const MonetaryAmount<T_CurrencyTag>& lhs, const RuntimeMonetaryAmount& rhs)
+{
+    return static_cast<RuntimeMonetaryAmount>(lhs) != rhs;
+}
+
+
+template <typename T_CurrencyTag>
+inline bool operator<(const RuntimeMonetaryAmount& lhs, const MonetaryAmount<T_CurrencyTag>& rhs)
+{
+    return lhs < static_cast<RuntimeMonetaryAmount>(rhs);
+}
+
+template <typename T_CurrencyTag>
+inline bool operator<(const MonetaryAmount<T_CurrencyTag>& lhs, const RuntimeMonetaryAmount& rhs)
+{
+    return static_cast<RuntimeMonetaryAmount>(lhs) < rhs;
+}
+
+template <typename T_CurrencyTag>
+inline bool operator>(const RuntimeMonetaryAmount& lhs, const MonetaryAmount<T_CurrencyTag>& rhs)
+{
+    return lhs > static_cast<RuntimeMonetaryAmount>(rhs);
+}
+
+template <typename T_CurrencyTag>
+inline bool operator>(const MonetaryAmount<T_CurrencyTag>& lhs, const RuntimeMonetaryAmount& rhs)
+{
+    return static_cast<RuntimeMonetaryAmount>(lhs) > rhs;
+}
+
+template <typename T_CurrencyTag>
+inline bool operator<=(const RuntimeMonetaryAmount& lhs, const MonetaryAmount<T_CurrencyTag>& rhs)
+{
+    return lhs <= static_cast<RuntimeMonetaryAmount>(rhs);
+}
+
+template <typename T_CurrencyTag>
+inline bool operator<=(const MonetaryAmount<T_CurrencyTag>& lhs, const RuntimeMonetaryAmount& rhs)
+{
+    return static_cast<RuntimeMonetaryAmount>(lhs) <= rhs;
+}
+
+template <typename T_CurrencyTag>
+inline bool operator>=(const RuntimeMonetaryAmount& lhs, const MonetaryAmount<T_CurrencyTag>& rhs)
+{
+    return lhs >= static_cast<RuntimeMonetaryAmount>(rhs);
+}
+
+template <typename T_CurrencyTag>
+inline bool operator>=(const MonetaryAmount<T_CurrencyTag>& lhs, const RuntimeMonetaryAmount& rhs)
+{
+    return static_cast<RuntimeMonetaryAmount>(lhs) >= rhs;
 }

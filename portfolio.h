@@ -64,7 +64,7 @@ private:
         {
             
             RuntimeMonetaryAmount instrumentValue = accumulationFunction(instrument.get());
-            if (&instrumentValue.currency == &TargetCurrencyTag::instance)
+            if (&instrumentValue.getCurrency() == &TargetCurrencyTag::instance)
             {
                 totalPips += instrumentValue.getPipAmount();
             }
@@ -76,7 +76,7 @@ private:
         }
 
 
-        return {totalPips};
+        return MonetaryAmount<TargetCurrencyTag>{totalPips};
     }
 
     void checkInvariants() const;

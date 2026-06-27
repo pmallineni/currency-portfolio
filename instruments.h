@@ -2,7 +2,7 @@
 
 #include <atomic>
 
-#include "types.h"
+#include "currencies.h"
 
 
 class FinancialInstrument
@@ -66,17 +66,17 @@ class Stock : public TypedFinancialInstrument<T_CurrencyTag>
 
 
 
-    MonetaryAmount<T_CurrencyTag> getValue() const override {return value_;}
+    MonetaryAmount<T_CurrencyTag> getSpecificValue() const override {return value_;}
     std::string_view getName() const noexcept override {return name_;}
     std::string_view getTickerSymbol() const noexcept {return tickerSymbol_;}
 
-    MonetaryAmount<T_CurrencyTag> getReturn() const override
+    MonetaryAmount<T_CurrencyTag> getSpecificReturn() const override
     {
         return MonetaryAmount(value_.getPipAmount() - priceBought_.getPipAmount());
     }
     
     // TODO: implement a more accurate return calculation that implements some sort of arbitrary distribution (normal distribution by default) taking account inputted holding period
-    MonetaryAmount<T_CurrencyTag> getReturn(Years holdingPeriod) const override
+    MonetaryAmount<T_CurrencyTag> getSpecificReturn(Years holdingPeriod) const override
     {
         if (holdingPeriod < 0) throw (std::range_error("holdingPeriod for a financial return cannot be less than 0"));
         if (holdingPeriod > holdingPeriod_) throw (std::range_error("holdingPeriod for a financial return cannot be greater than the holding period of the stock"));
@@ -106,17 +106,17 @@ class Bond : public TypedFinancialInstrument<T_CurrencyTag>
     Bond(MonetaryAmount<T_CurrencyTag> principal, double couponRate, std::string name, Years payoutPeriod = 0.5, Years holdingPeriod = 0) :
     principal_(principal), value_(principal), couponRate_(couponRate), payoutPeriod_(payoutPeriod), holdingPeriod_(holdingPeriod), name_(name) {}
 
-    MonetaryAmount<T_CurrencyTag> getValue() const override {return value_;} // maybe modifiable if I include buy and sell
-    MonetaryAmount<T_CurrencyTag> getReturn(Years holdingPeriod) const
+    MonetaryAmount<T_CurrencyTag> getSpecificValue() const override {return value_;} // maybe modifiable if I include buy and sell
+    MonetaryAmount<T_CurrencyTag> getSpecificReturn(Years holdingPeriod) const
     {
         if (holdingPeriod < 0) throw (std::range_error("holdingPeriod for a financial return cannot be less than 0"));
 
         std::int64_t numInterestPeriods = static_cast<std::int64_t>(std::floor(holdingPeriod / payoutPeriod_));
         return MonetaryAmount<T_CurrencyTag>(principal_ * numInterestPeriods * couponRate_); // simple Interest
     }
-    MonetaryAmount<T_CurrencyTag> getReturn() const override
+    MonetaryAmount<T_CurrencyTag> getSpecificReturn() const override
     {
-        return getReturn(holdingPeriod_);
+        return getSpecificReturn(holdingPeriod_);
     }
 
     std::string_view getName() const noexcept override {return name_;}
@@ -143,12 +143,12 @@ class Cash : public TypedFinancialInstrument<T_CurrencyTag>
     public: 
     Cash(MonetaryAmount<T_CurrencyTag> amount, Years holdingPeriod = 0) : value_(amount), holdingPeriod_(holdingPeriod) {}
 
-    MonetaryAmount<T_CurrencyTag> getValue()  const noexcept override {return value_;}
-    MonetaryAmount<T_CurrencyTag> getReturn(Years holdingPeriod) const
+    MonetaryAmount<T_CurrencyTag> getSpecificValue()  const noexcept override {return value_;}
+    MonetaryAmount<T_CurrencyTag> getSpecificReturn(Years holdingPeriod) const
     {
-        return getReturn();
+        return getSpecificReturn();
     }
-    MonetaryAmount<T_CurrencyTag> getReturn() const override
+    MonetaryAmount<T_CurrencyTag> getSpecificReturn() const override
     {
         return {0};
     }

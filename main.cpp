@@ -1,14 +1,158 @@
+#include <cassert>
 #include <iostream>
+#include <memory>
+#include <vector>
+#include <algorithm>
+#include <stdexcept>
+
 
 #include "portfolio.h"
 #include "portfolio_views.h"
 
 #include "random.h"
 
-int main() 
+using USD = CurrencyTag<US_DOLLAR>;
+using JPY = CurrencyTag<JAPANESE_YEN>;
+
+static void testMonetaryAmountOperations()
 {
-    Portfolio myPortfolio {"myPortfolio"};
+    USDAmount usdValue1 = 15000_USD;
+    USDAmount usdValue2 = 5000_USD;
 
+    assert((usdValue1 + usdValue2) == 20000_USD);
+    assert((usdValue1 - usdValue2) == 10000_USD);
+    assert((usdValue1 * 0.1) == 1500_USD);
+    assert(usdValue2 < usdValue1);
 
+    RuntimeMonetaryAmount runtimeUsd{usdValue1.getPipAmount(), US_DOLLAR};
+    RuntimeMonetaryAmount runtimeJpy{(1000_JPY).getPipAmount(), JAPANESE_YEN}; // must put parentheses around 1000_JPY because parser
+
+    bool caught = false;
+    try
+    {
+        [[maybe_unused]] auto invalidSum = runtimeUsd + runtimeJpy;
+    }
+    catch (const std::runtime_error&)
+    {
+        caught = true;
+    }
+    assert(caught && "Runtime currency validation should throw on mismatched currencies");
+}
+
+static void testFinancialInstruments()
+{
+    auto stock = std::make_unique<Stock<USD>>(10000_USD, "AAPL", "Apple", 2.0);
+    stock->setValue(12000_USD);
+    assert(stock->getValue() == 12000_USD);
+    assert(stock->getReturn() == 2000_USD);
+    assert(stock->getReturn(1.0) == 2000_USD);
+
+    bool caught = false;
+    try
+    {
+        stock->getReturn(-1.0);
+    }
+    catch (const std::range_error&)
+    {
+        caught = true;
+    }
+    assert(caught && "Stock should throw for negative holding period");
+
+    caught = false;
+    try
+    {
+        stock->getReturn(3.0);
+    }
+    catch (const std::range_error&)
+    {
+        caught = true;
+    }
+    assert(caught && "Stock should throw for holding periods greater than available");
+
+    auto bond = std::make_unique<Bond<USD>>(10000_USD, 0.05, 1.0, 2.0);
+    assert(bond->getValue() == 10000_USD);
+    assert(bond->getReturn() == 1000_USD);
+    assert(bond->getReturn(1.5) == 500_USD);
+
+    caught = false;
+    try
+    {
+        bond->getReturn(-0.5);
+    }
+    catch (const std::range_error&)
+    {
+        caught = true;
+    }
+    assert(caught && "Bond should throw for negative holding period");
+
+    auto cash = std::make_unique<Cash<USD>>(5000_USD, 1.0);
+    assert(cash->getValue() == 5000_USD);
+    assert(cash->getReturn() == 0_USD);
+    assert(cash->getReturn(10.0) == 0_USD);
+}
+
+static void testPortfolioAndViews()
+{
+    Portfolio portfolio{"Test Portfolio"};
+
+    auto stock = std::make_unique<Stock<USD>>(10000_USD, "AAPL", "Apple", 2.0);
+    stock->setValue(12000_USD);
+    auto stockPtr = stock.get();
+
+    auto bond = std::make_unique<Bond<USD>>(10000_USD, 0.05, 1.0, 2.0);
+    auto bondPtr = bond.get();
+
+    auto cash = std::make_unique<Cash<USD>>(5000_USD, 0.0);
+    auto cashPtr = cash.get();
+
+    assert(portfolio.addInstrument(std::move(stock)));
+    assert(portfolio.addInstrument(std::move(bond)));
+    assert(portfolio.addInstrument(std::move(cash)));
+    assert(!portfolio.addInstrument(nullptr));
+    assert(portfolio.getInstruments().size() == 3);
+
+    assert(portfolio.getTotalValue<USD>().getPipAmount() == 27000);
+    assert(portfolio.getTotalReturn<USD>().getPipAmount() == 3000);
+    assert(portfolio.getTotalReturn<USD>(1.0).getPipAmount() == 2500);
+
+    auto byValueAsc = PortfolioViews::getByValue(portfolio, true);
+    assert(byValueAsc.size() == 3);
+    assert(byValueAsc[0]->getName() == "Cash");
+    assert(byValueAsc[1]->getName() == "Bond");
+    assert(byValueAsc[2]->getName() == "Apple");
+
+    auto byReturnDesc = PortfolioViews::getByReturn(portfolio, false);
+    assert(byReturnDesc[0]->getName() == "Apple");
+    assert(byReturnDesc[1]->getName() == "Bond");
+    assert(byReturnDesc[2]->getName() == "Cash");
+
+    auto byReturnHoldingPeriod = PortfolioViews::getByReturn(portfolio, 1.0, true);
+    assert(byReturnHoldingPeriod[0]->getName() == "Cash");
+    assert(byReturnHoldingPeriod[1]->getName() == "Bond");
+    assert(byReturnHoldingPeriod[2]->getName() == "Apple");
+
+    auto byNameAsc = PortfolioViews::getByName(portfolio, true);
+    assert(byNameAsc[0]->getName() == "Apple");
+    assert(byNameAsc[1]->getName() == "Bond");
+    assert(byNameAsc[2]->getName() == "Cash");
+
+    auto byIDAsc = PortfolioViews::getByID(portfolio, true);
+    assert(std::is_sorted(byIDAsc.begin(), byIDAsc.end(), [](const FinancialInstrument* a, const FinancialInstrument* b){ return a->getID() < b->getID(); }));
+
+    portfolio.removeInstrument(*stockPtr);
+    assert(portfolio.getInstruments().size() == 2);
+
+    portfolio.removeInstrument(*bondPtr);
+    portfolio.removeInstrument(*cashPtr);
+    assert(portfolio.getInstruments().empty());
+}
+
+int main()
+{
+    std::cout << "Running simple test suite...\n";
+    testMonetaryAmountOperations();
+    testFinancialInstruments();
+    testPortfolioAndViews();
+    std::cout << "All tests passed.\n";
     return 0;
 }
