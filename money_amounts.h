@@ -31,15 +31,13 @@ public:
     Pip getPipAmount() const noexcept { return pipAmount; }
     const Currency& getCurrency() const noexcept { return *currency; }
 
-    // TODO implement currency conversion without floating point numbers
     RuntimeMonetaryAmount convertTo(const Currency& targetCurrency) const
     {
         if (currency == &targetCurrency) return *this;
         const CurrencyConverterService& service {CurrencyConverterService::instance()};
-        double rate {service.getRate(*currency, targetCurrency)};
-        double amount = (static_cast<double>(targetCurrency.unitPips) /  getCurrency().unitPips) * getPipAmount() * rate;
+        const double rate {service.getRate(*currency, targetCurrency)};
+        const double amount = (static_cast<double>(targetCurrency.unitPips) / getCurrency().unitPips) * getPipAmount() * rate;
         return RuntimeMonetaryAmount{static_cast<Pip>(std::floor(amount)), targetCurrency};
-
     }
 
     RuntimeMonetaryAmount in(const Currency& targetCurrency) const { return convertTo(targetCurrency); }
@@ -151,7 +149,7 @@ inline bool operator==(const RuntimeMonetaryAmount& lhs, const RuntimeMonetaryAm
 inline bool operator!=(const RuntimeMonetaryAmount& lhs, const RuntimeMonetaryAmount& rhs)
 {
     validateCurrency(lhs, rhs);
-    return lhs.getPipAmount() == rhs.getPipAmount();
+    return lhs.getPipAmount() != rhs.getPipAmount();
 }
 inline bool operator<(const RuntimeMonetaryAmount& lhs, const RuntimeMonetaryAmount& rhs)
 {

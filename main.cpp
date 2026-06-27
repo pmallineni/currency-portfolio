@@ -25,6 +25,15 @@ static void testMonetaryAmountOperations()
     RuntimeMonetaryAmount runtimeUsd{usdValue1.getPipAmount(), US_DOLLAR};
     RuntimeMonetaryAmount runtimeJpy{(1000_JPY).getPipAmount(), JAPANESE_YEN}; // must put parentheses around 1000_JPY because parser
 
+    auto convertedUsdToJpy = runtimeUsd.convertTo(JAPANESE_YEN);
+    assert(convertedUsdToJpy.getPipAmount() == 24237);
+    assert(convertedUsdToJpy.getCurrency().isoCode == "JPY");
+
+    auto convertedJpyToUsd = RuntimeMonetaryAmount{10000, JAPANESE_YEN}.convertTo(US_DOLLAR);
+    assert(convertedJpyToUsd.getPipAmount() == 6189);
+    assert(convertedJpyToUsd.getCurrency().isoCode == "USD");
+    assert((runtimeUsd != RuntimeMonetaryAmount{15001, US_DOLLAR}));
+
     bool caught = false;
     try
     {
