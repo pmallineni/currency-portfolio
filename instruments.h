@@ -1,15 +1,27 @@
 #pragma once
 
+#include <atomic>
+
 #include "types.h"
 
 
 class FinancialInstrument
 {
+    protected:
+    static std::uint64_t generateID() noexcept
+    {
+        static std::atomic<std::uint64_t> counter {0};
+        return ++counter;
+    }
+
+    const std::uint64_t id_ {generateID()};
+
     public:
+    std::uint64_t getID() const noexcept { return id_; }
+
     virtual RuntimeMonetaryAmount getValue() const  = 0;
     virtual RuntimeMonetaryAmount getReturn() const = 0;
     virtual RuntimeMonetaryAmount getReturn(Years holdingPeriod) const = 0;
-    virtual std::int64_t getID() const noexcept = 0;
     virtual std::string_view getName() const noexcept = 0;
     virtual void addYearsToHoldingPeriod(Years years) = 0;
     virtual ~FinancialInstrument() = default; 
@@ -56,7 +68,6 @@ class Stock : public TypedFinancialInstrument<T_CurrencyTag>
 
     MonetaryAmount<T_CurrencyTag> getValue() const override {return value_;}
     std::string_view getName() const noexcept override {return name_;}
-    std::int64_t getID() const noexcept override {return stockID_;}
     std::string_view getTickerSymbol() const noexcept {return tickerSymbol_;}
 
     MonetaryAmount<T_CurrencyTag> getReturn() const override
@@ -82,8 +93,6 @@ class Stock : public TypedFinancialInstrument<T_CurrencyTag>
     std::string_view name_;
     Years holdingPeriod_;
     
-    inline static std::int64_t stockIDNum {0}; 
-    const std::int64_t stockID_{++stockIDNum};
     
 };
 
@@ -110,7 +119,6 @@ class Bond : public TypedFinancialInstrument<T_CurrencyTag>
         return getReturn(holdingPeriod_);
     }
 
-    std::int64_t getID() const noexcept override {return bondID_;}
     std::string_view getName() const noexcept override {return name_;}
 
     void addYearsToHoldingPeriod(Years years) {holdingPeriod_ += years;}
@@ -124,8 +132,6 @@ class Bond : public TypedFinancialInstrument<T_CurrencyTag>
     Years holdingPeriod_;
     std::string_view name_;
 
-    inline static std::int64_t bondIDNum {0};
-    const std::int64_t bondID_{++bondIDNum};
     static constexpr std::string_view defaultName {"Bond"};
 
 
@@ -148,13 +154,10 @@ class Cash : public TypedFinancialInstrument<T_CurrencyTag>
     }
     std::string_view getName() const noexcept override {return name_;}
 
-    std::int64_t getID() const noexcept override {return cashID_;}
     void addYearsToHoldingPeriod(Years years) override {holdingPeriod_ += years;}
     private: 
     MonetaryAmount<T_CurrencyTag> value_;
     Years holdingPeriod_;
-    static inline std::int64_t cashIDNum {0};
-    const std::int64_t cashID_{++cashIDNum};
     constexpr static std::string_view name_ {"Cash"}; // unlike other Financial Instruments, Cash is not a type of financial instrument that can be named by the user. It is always just "Cash"
 };
 
