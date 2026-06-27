@@ -31,13 +31,14 @@ public:
     Pip getPipAmount() const noexcept { return pipAmount; }
     const Currency& getCurrency() const noexcept { return *currency; }
 
-    // TODO implement currency conversion
+    // TODO implement currency conversion without floating point numbers
     RuntimeMonetaryAmount convertTo(const Currency& targetCurrency) const
     {
         if (currency == &targetCurrency) return *this;
         const CurrencyConverterService& service {CurrencyConverterService::instance()};
         double rate {service.getRate(*currency, targetCurrency)};
-        return RuntimeMonetaryAmount{static_cast<Pip>(std::floor(getPipAmount() * rate)), targetCurrency};
+        double amount = (static_cast<double>(targetCurrency.unitPips) /  getCurrency().unitPips) * getPipAmount() * rate;
+        return RuntimeMonetaryAmount{static_cast<Pip>(std::floor(amount)), targetCurrency};
 
     }
 
@@ -74,7 +75,6 @@ public:
 
     constexpr MonetaryAmount operator+(const MonetaryAmount& m) const { return MonetaryAmount{pipAmount + m.pipAmount}; }      
     constexpr MonetaryAmount operator-(const MonetaryAmount& m) const { return MonetaryAmount{pipAmount - m.pipAmount}; }      
-    constexpr MonetaryAmount operator*(const MonetaryAmount& m) const { return MonetaryAmount{pipAmount * m.pipAmount}; }     
     
     constexpr MonetaryAmount operator*(double percentage) const { return percentOf(percentage); }      
     friend constexpr MonetaryAmount operator*(double percentage, const MonetaryAmount& m) { return m.percentOf(percentage); }
@@ -123,12 +123,6 @@ inline RuntimeMonetaryAmount operator-(const RuntimeMonetaryAmount& lhs, const R
 {
     validateCurrency(lhs, rhs);
     return {lhs.getPipAmount() - rhs.getPipAmount(), lhs.getCurrency()};
-}
-
-inline RuntimeMonetaryAmount operator*(const RuntimeMonetaryAmount& lhs, const RuntimeMonetaryAmount& rhs)
-{
-    validateCurrency(lhs, rhs);
-    return {lhs.getPipAmount() * rhs.getPipAmount(), lhs.getCurrency()};
 }
 
 inline RuntimeMonetaryAmount getPercentOf(const RuntimeMonetaryAmount& lhs, double percentage) 
@@ -207,18 +201,6 @@ template <typename T_CurrencyTag>
 inline RuntimeMonetaryAmount operator-(const MonetaryAmount<T_CurrencyTag>& lhs, const RuntimeMonetaryAmount& rhs)
 {
     return static_cast<RuntimeMonetaryAmount>(lhs) - rhs;
-}
-
-template <typename T_CurrencyTag>
-inline RuntimeMonetaryAmount operator*(const RuntimeMonetaryAmount& lhs, const MonetaryAmount<T_CurrencyTag>& rhs)
-{
-    return lhs * static_cast<RuntimeMonetaryAmount>(rhs);
-}
-
-template <typename T_CurrencyTag>
-inline RuntimeMonetaryAmount operator*(const MonetaryAmount<T_CurrencyTag>& lhs, const RuntimeMonetaryAmount& rhs)
-{
-    return static_cast<RuntimeMonetaryAmount>(lhs) * rhs;
 }
 
 template <typename T_CurrencyTag>

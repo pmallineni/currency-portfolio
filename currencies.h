@@ -19,15 +19,16 @@ using JPY = CurrencyTag<JAPANESE_YEN>;
 
 namespace CurrencyInit
 {
-    inline PresetCurrencyConverter presetConverter;
     inline void setupConversions()
     {
+        PresetCurrencyConverter presetConverter;
         presetConverter.setRate(EURO, US_DOLLAR,      1.1340);
         presetConverter.setRate(EURO, JAPANESE_YEN,   183.35);
         presetConverter.setRate(EURO, BRITISH_POUND,  0.86165);
         presetConverter.setRate(US_DOLLAR, JAPANESE_YEN, 161.58);
         presetConverter.setRate(BRITISH_POUND, JAPANESE_YEN, 212.80); // EUR/GBP * EUR/JPY inverse
-
+        presetConverter.setRate(US_DOLLAR, BRITISH_POUND, 0.76);
+        
         CurrencyConverterService::instance().setConverter(std::make_unique<PresetCurrencyConverter>(std::move(presetConverter)));
     }
 

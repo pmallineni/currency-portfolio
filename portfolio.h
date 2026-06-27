@@ -53,7 +53,7 @@ private:
     std::string portfolioName_;
     std::vector<std::unique_ptr<FinancialInstrument>> instruments_;
     std::int64_t portfolioID_ {++portfolioIDNum};
-    static inline std::int16_t portfolioIDNum {0};
+    static inline std::int64_t portfolioIDNum {0};
     static constexpr std::string_view defaultPortfolioName {"Portfolio"};
 
 

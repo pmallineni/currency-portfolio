@@ -89,8 +89,8 @@ class Stock : public TypedFinancialInstrument<T_CurrencyTag>
     private: 
     MonetaryAmount<T_CurrencyTag> priceBought_;
     MonetaryAmount<T_CurrencyTag> value_;
-    std::string_view tickerSymbol_;
-    std::string_view name_;
+    std::string tickerSymbol_;
+    std::string name_;
     Years holdingPeriod_;
     
     
@@ -130,7 +130,7 @@ class Bond : public TypedFinancialInstrument<T_CurrencyTag>
     double couponRate_;
     Years payoutPeriod_;
     Years holdingPeriod_;
-    std::string_view name_;
+    std::string name_;
 
     static constexpr std::string_view defaultName {"Bond"};
 

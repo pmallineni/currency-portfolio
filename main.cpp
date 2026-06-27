@@ -117,7 +117,6 @@ static void testPortfolioAndViews()
     assert(byValueAsc.size() == 3);
     assert(byValueAsc[0]->getName() == "Cash");
     assert(byValueAsc[1]->getName() == "Bond");
-    std::cout << byValueAsc[2]->getName();
     assert(byValueAsc[2]->getName() == "Apple");
 
     auto byReturnDesc = PortfolioViews::getByReturn(portfolio, false);
@@ -139,19 +138,23 @@ static void testPortfolioAndViews()
     assert(std::is_sorted(byIDAsc.begin(), byIDAsc.end(), [](const FinancialInstrument* a, const FinancialInstrument* b){ return a->getID() < b->getID(); }));
 
 
-    auto japanStock = std::make_unique<Stock<JPY>>(2309409_JPY, "JPNO", "JapanStock", 2);
-    std::cout << portfolio.getTotalValue<USD>();
-    std::cout << portfolio.getTotalValue<JPY>();
-    std::cout << portfolio.getTotalValue<GBP>();
-    std::cout << "hello";
+    auto japanStock = std::make_unique<Stock<JPY>>(992309409_JPY, "JPNO", "JapanStock", 2);
+    auto japanStockptr = japanStock.get();
+    portfolio.addInstrument(std::move(japanStock));
+    std::cout << portfolio.getTotalValue<USD>() << '\n';
+    std::cout << portfolio.getTotalValue<JPY>() << '\n';
+    std::cout << portfolio.getTotalValue<GBP>() << '\n';
     
+    auto byReturnHoldingPeriod2 = PortfolioViews::getByValue(portfolio, 2.0);
+    for (auto* instrument : byReturnHoldingPeriod2)
+        if (instrument) std::cout << instrument->getName() << '\n';
 
     portfolio.removeInstrument(*stockPtr);
-    assert(portfolio.getInstruments().size() == 2);
+    assert(portfolio.getInstruments().size() == 3);
 
     portfolio.removeInstrument(*bondPtr);
     portfolio.removeInstrument(*cashPtr);
-    portfolio.removeInstrument(*japanStock);
+    portfolio.removeInstrument(*japanStockptr);
     assert(portfolio.getInstruments().empty());
 }
 

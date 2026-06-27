@@ -6,19 +6,19 @@ namespace PortfolioViews
     std::vector<const FinancialInstrument*> getByValue(const Portfolio& portfolio, bool ascending)
     {
         auto valueFunction = InstrumentFunctions::valueFunction;
-        return details::getSortedInstrumentByFunc(portfolio, valueFunction, ascending);
+        return details::getSortedInstrumentbyMoneyFunc(portfolio, valueFunction, ascending);
     }
 
     std::vector<const FinancialInstrument*> getByReturn(const Portfolio& portfolio, bool ascending)
     {
         auto returnFunction = InstrumentFunctions::returnFunction;
-        return details::getSortedInstrumentByFunc(portfolio, returnFunction, ascending);
+        return details::getSortedInstrumentbyMoneyFunc(portfolio, returnFunction, ascending);
     }
 
     std::vector<const FinancialInstrument*> getByReturn(const Portfolio& portfolio, Years holdingPeriod, bool ascending)
     {
         auto returnFunction = InstrumentFunctions::holdingPeriodReturnFunction(holdingPeriod);
-        return details::getSortedInstrumentByFunc(portfolio, returnFunction, ascending);
+        return details::getSortedInstrumentbyMoneyFunc(portfolio, returnFunction, ascending);
     }
 
     std::vector<const FinancialInstrument*> getByID(const Portfolio& portfolio, bool ascending)

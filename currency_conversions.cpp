@@ -4,10 +4,12 @@ std::size_t CurrencyPairHash::operator()(const std::pair<const Currency*, const 
     return std::hash<const Currency*>{}(p.first) ^ 
             (std::hash<const Currency*>{}(p.second) << 1);
 }
+
+// TODO get rid of floating point arithmetic
 void PresetCurrencyConverter::setRate(const Currency& from, const Currency& to, double rate)
 {
     rates_[{&from, &to}] = rate;
-    rates_[{&from, &to}] = 1.0 / rate;
+    rates_[{&to, &from}] = 1.0 / rate;
 }
 
 double PresetCurrencyConverter::getRate(const Currency& from, const Currency& to) const

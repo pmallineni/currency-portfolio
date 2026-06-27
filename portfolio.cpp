@@ -10,7 +10,7 @@ bool Portfolio::addInstrument(std::unique_ptr<FinancialInstrument> instrument)
 void Portfolio::removeInstrument(FinancialInstrument& instrument)
 {
     // TODO implement individual IDs for each FinancialInstrument rather than comparing pointers, as this is not a reliable way to identify unique instruments
-    auto removeCondition = [&instrument](const std::unique_ptr<FinancialInstrument>& ptr) { return ptr.get() == &instrument; };
+    auto removeCondition = [&instrument](const std::unique_ptr<FinancialInstrument>& ptr) { return ptr->getID() == instrument.getID(); };
     
     auto newEnd = std::remove_if(instruments_.begin(), instruments_.end(), removeCondition);
     instruments_.erase(newEnd, instruments_.end());
