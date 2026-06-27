@@ -2,10 +2,8 @@
 #include <vector>
 #include <algorithm>
 
-#include "types.h"
-
-class Portfolio;
-class FinancialInstrument;
+#include "instruments.h"
+#include "portfolio.h"
 
 namespace PortfolioViews
 {
@@ -53,6 +51,6 @@ namespace PortfolioViews
     std::vector<const FinancialInstrument*> getByReturn(const Portfolio& portfolio, Years holdingPeriod, bool ascending= true);
     std::vector<const FinancialInstrument*> getByID(const Portfolio& portfolio, bool ascending = true);
     std::vector<const FinancialInstrument*> getByName(const Portfolio& portfolio, bool lettersAtoZ = true);
-    
+
 
 }

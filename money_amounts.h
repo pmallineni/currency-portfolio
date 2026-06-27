@@ -4,8 +4,9 @@
 #include <limits>
 #include <stdexcept>
 #include <cmath> 
+#include <iostream>
 
-#include "currency_types.h"
+#include "currency_conversions.h"
 
 #define DECLARE_CURRENCY_LITERAL(TAG, INSTANCE, SUFFIX)             \
     using TAG = MonetaryAmount<CurrencyTag<INSTANCE>>;              \
@@ -31,11 +32,18 @@ public:
     const Currency& getCurrency() const noexcept { return *currency; }
 
     // TODO implement currency conversion
-    RuntimeMonetaryAmount convertedTo(const Currency& targetCurrency) const
+    RuntimeMonetaryAmount convertTo(const Currency& targetCurrency) const
     {
         if (currency == &targetCurrency) return *this;
-        else throw std::runtime_error("Currency conversion not implemented yet");
+        const CurrencyConverterService& service {CurrencyConverterService::instance()};
+        double rate {service.getRate(*currency, targetCurrency)};
+        return RuntimeMonetaryAmount{static_cast<Pip>(std::floor(getPipAmount() * rate)), targetCurrency};
+
     }
+
+    RuntimeMonetaryAmount in(const Currency& targetCurrency) const { return convertTo(targetCurrency); }
+    RuntimeMonetaryAmount as(const Currency& targetCurrency) const { return convertTo(targetCurrency); }
+
 
 private: 
     Pip pipAmount;
@@ -54,7 +62,7 @@ public:
     constexpr const Currency& getCurrency() const noexcept { return currency; }    
     
     // TODO: Implement a more accurate percentage calculation that factors in the currency's unitPips and rounding rules for the specific currency
-    // If making changes, make change to RuntimeMonetaryAmount::percentOf
+    // If making changes, make change to RuntimeMonetaryAmount::percentOf as well
     constexpr MonetaryAmount percentOf(double percentage) const { 
         Pip newPipAmount = static_cast<Pip>(std::floor(pipAmount * percentage));
         return MonetaryAmount{newPipAmount};
@@ -98,28 +106,7 @@ private:
     Pip pipAmount;
     static constexpr const Currency& currency = T_CurrencyTag::instance;
 };
-/*
-    constexpr MonetaryAmount operator+(const MonetaryAmount& m) const { return {pipAmount + m.pipAmount}; }      
-    constexpr MonetaryAmount operator-(const MonetaryAmount& m) const { return {pipAmount - m.pipAmount}; }      
-    constexpr MonetaryAmount operator*(const MonetaryAmount& m) const { return {pipAmount * m.pipAmount}; }     
-    
-    constexpr MonetaryAmount operator*(double percentage) const { return getPercentOf(percentage); }      
-    friend constexpr MonetaryAmount operator*(double percentage, const MonetaryAmount& m) { return m.getPercentOf(percentage); }
 
-    constexpr MonetaryAmount& operator+=(const MonetaryAmount& m) { pipAmount += m.pipAmount; return *this; }      
-    constexpr MonetaryAmount& operator-=(const MonetaryAmount& m) { pipAmount -= m.pipAmount; return *this; }      
-    constexpr MonetaryAmount& operator*=(const MonetaryAmount& m) { pipAmount *= m.pipAmount; return *this; }      
-
-*/
-
-
-/*
-    // TODO: Implement a more accurate percentage calculation that factors in the currency's unitPips and rounding rules for the specific currency
-    constexpr MonetaryAmount getPercentOf(double percentage) const { 
-        Pip newPipAmount = static_cast<Pip>(std::floor(pipAmount * percentage));
-        return {newPipAmount};
-    }
-*/
 
 inline void validateCurrency(const RuntimeMonetaryAmount& lhs, const RuntimeMonetaryAmount rhs)
 {

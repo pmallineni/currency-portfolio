@@ -72,7 +72,7 @@ class Stock : public TypedFinancialInstrument<T_CurrencyTag>
 
     MonetaryAmount<T_CurrencyTag> getSpecificReturn() const override
     {
-        return MonetaryAmount(value_.getPipAmount() - priceBought_.getPipAmount());
+        return MonetaryAmount<T_CurrencyTag>(value_.getPipAmount() - priceBought_.getPipAmount());
     }
     
     // TODO: implement a more accurate return calculation that implements some sort of arbitrary distribution (normal distribution by default) taking account inputted holding period
@@ -81,7 +81,7 @@ class Stock : public TypedFinancialInstrument<T_CurrencyTag>
         if (holdingPeriod < 0) throw (std::range_error("holdingPeriod for a financial return cannot be less than 0"));
         if (holdingPeriod > holdingPeriod_) throw (std::range_error("holdingPeriod for a financial return cannot be greater than the holding period of the stock"));
 
-        return MonetaryAmount(value_.getPipAmount() - priceBought_.getPipAmount());
+        return MonetaryAmount<T_CurrencyTag>(value_.getPipAmount() - priceBought_.getPipAmount());
     }
     
     void setValue(MonetaryAmount<T_CurrencyTag> newValue) {value_ = newValue;}
@@ -150,7 +150,7 @@ class Cash : public TypedFinancialInstrument<T_CurrencyTag>
     }
     MonetaryAmount<T_CurrencyTag> getSpecificReturn() const override
     {
-        return {0};
+        return MonetaryAmount<T_CurrencyTag>{0};
     }
     std::string_view getName() const noexcept override {return name_;}
 

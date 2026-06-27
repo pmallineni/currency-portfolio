@@ -11,8 +11,6 @@
 
 #include "random.h"
 
-using USD = CurrencyTag<US_DOLLAR>;
-using JPY = CurrencyTag<JAPANESE_YEN>;
 
 static void testMonetaryAmountOperations()
 {
@@ -119,6 +117,7 @@ static void testPortfolioAndViews()
     assert(byValueAsc.size() == 3);
     assert(byValueAsc[0]->getName() == "Cash");
     assert(byValueAsc[1]->getName() == "Bond");
+    std::cout << byValueAsc[2]->getName();
     assert(byValueAsc[2]->getName() == "Apple");
 
     auto byReturnDesc = PortfolioViews::getByReturn(portfolio, false);
@@ -139,16 +138,26 @@ static void testPortfolioAndViews()
     auto byIDAsc = PortfolioViews::getByID(portfolio, true);
     assert(std::is_sorted(byIDAsc.begin(), byIDAsc.end(), [](const FinancialInstrument* a, const FinancialInstrument* b){ return a->getID() < b->getID(); }));
 
+
+    auto japanStock = std::make_unique<Stock<JPY>>(2309409_JPY, "JPNO", "JapanStock", 2);
+    std::cout << portfolio.getTotalValue<USD>();
+    std::cout << portfolio.getTotalValue<JPY>();
+    std::cout << portfolio.getTotalValue<GBP>();
+    std::cout << "hello";
+    
+
     portfolio.removeInstrument(*stockPtr);
     assert(portfolio.getInstruments().size() == 2);
 
     portfolio.removeInstrument(*bondPtr);
     portfolio.removeInstrument(*cashPtr);
+    portfolio.removeInstrument(*japanStock);
     assert(portfolio.getInstruments().empty());
 }
 
 int main()
 {
+    CurrencyInit::setupConversions();
     std::cout << "Running simple test suite...\n";
     testMonetaryAmountOperations();
     testFinancialInstruments();

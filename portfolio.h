@@ -1,9 +1,11 @@
+#pragma once
+
 #include <memory>
 #include <vector>
 #include <algorithm>
 #include <cassert>
 
-#include "types.h"
+#include "currencies.h"
 #include "instruments.h"
 
 class Portfolio
@@ -68,11 +70,12 @@ private:
             {
                 totalPips += instrumentValue.getPipAmount();
             }
-            else
+            else if constexpr(ConvertCurrency)
             {
-                if constexpr (ConvertCurrency) static_assert(!sizeof(AccumulationFunc), "Currency conversion not implemented yet");
-                else throw std::runtime_error("Currency mismatch and conversion not allowed");
+                totalPips += instrumentValue.as(TargetCurrencyTag::instance).getPipAmount();
             }
+            else throw std::runtime_error("Currency mismatch and conversion not allowed");
+            
         }
 
 
