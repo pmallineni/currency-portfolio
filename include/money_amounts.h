@@ -198,13 +198,27 @@ inline RuntimeMonetaryAmount RuntimeMonetaryAmount::convertTo(const Currency& ta
 {
         if (currency == &targetCurrency) return *this;
         const CurrencyConverterService& service {CurrencyConverterService::instance()};
-        Rate rate {service.getRate(*currency, targetCurrency)};
-//        __int128_t amount = (static_cast<__int128_t>(targetCurrency.unitPips) * getPipAmount() * Rate::detail::getRaw(rate)) / getCurrency().unitPips;
-        __int128_t amount = getPipAmount();     
-        amount  *= Rate::detail::getRaw(rate);
-        amount  *= targetCurrency.unitPips;
-        amount /= (Rate::detail::getScale() * currency->unitPips);
-        return RuntimeMonetaryAmount{static_cast<Pip>(amount), targetCurrency};
+        try
+        {
+            Rate rate {service.getRate(*currency, targetCurrency)};
+            __int128_t amount = getPipAmount();     
+            amount  *= Rate::detail::getRaw(rate);
+            amount  *= targetCurrency.unitPips;
+            amount /= (Rate::detail::getScale() * currency->unitPips);
+            return RuntimeMonetaryAmount{static_cast<Pip>(amount), targetCurrency};
+        }
+        catch (std::runtime_error& e)
+        {
+            Rate rate {service.getRate(targetCurrency, *currency)};
+            __int128_t amount = getPipAmount();  
+            amount *= targetCurrency.unitPips;
+            amount *= Rate::detail::getScale();
+            amount /= currency-> unitPips;
+            amount /= Rate::detail::getRaw(rate);
+            return RuntimeMonetaryAmount{static_cast<Pip>(amount), targetCurrency};
+            
+        }
+
 }
 inline bool operator==(const RuntimeMonetaryAmount& lhs, const RuntimeMonetaryAmount& rhs)
 {
