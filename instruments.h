@@ -100,10 +100,10 @@ template <typename T_CurrencyTag>
 class Bond : public TypedFinancialInstrument<T_CurrencyTag>
 {
     public:
-    Bond(MonetaryAmount<T_CurrencyTag> principal, double couponRate, Years payoutPeriod = 0.5, Years holdingPeriod = 0) :
+    Bond(MonetaryAmount<T_CurrencyTag> principal, Rate couponRate, Years payoutPeriod = 0.5, Years holdingPeriod = 0) :
     principal_(principal), value_(principal), couponRate_(couponRate), payoutPeriod_(payoutPeriod), holdingPeriod_(holdingPeriod), name_(defaultName){}
     
-    Bond(MonetaryAmount<T_CurrencyTag> principal, double couponRate, std::string name, Years payoutPeriod = 0.5, Years holdingPeriod = 0) :
+    Bond(MonetaryAmount<T_CurrencyTag> principal, Rate couponRate, std::string name, Years payoutPeriod = 0.5, Years holdingPeriod = 0) :
     principal_(principal), value_(principal), couponRate_(couponRate), payoutPeriod_(payoutPeriod), holdingPeriod_(holdingPeriod), name_(name) {}
 
     MonetaryAmount<T_CurrencyTag> getSpecificValue() const override {return value_;} // maybe modifiable if I include buy and sell
@@ -127,7 +127,7 @@ class Bond : public TypedFinancialInstrument<T_CurrencyTag>
     private:
     MonetaryAmount<T_CurrencyTag> principal_; 
     MonetaryAmount<T_CurrencyTag> value_;
-    double couponRate_;
+    Rate couponRate_;
     Years payoutPeriod_;
     Years holdingPeriod_;
     std::string name_;

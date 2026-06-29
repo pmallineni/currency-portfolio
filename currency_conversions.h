@@ -13,19 +13,19 @@ struct CurrencyPairHash {
 class ICurrencyConverter
 {
     public:
-    virtual double getRate(const Currency& from, const Currency& to) const = 0;
+    virtual Rate getRate(const Currency& from, const Currency& to) const = 0;
     virtual ~ICurrencyConverter() = default;
 };
 
-using CurrencyMap = std::unordered_map<std::pair<const Currency*, const Currency*>, double, CurrencyPairHash>;
+using CurrencyMap = std::unordered_map<std::pair<const Currency*, const Currency*>, Rate, CurrencyPairHash>;
 
 class PresetCurrencyConverter : public ICurrencyConverter
 {
     public: 
     PresetCurrencyConverter(CurrencyMap exchangeRates) : rates_(exchangeRates) {};
     PresetCurrencyConverter() = default;
-    void setRate(const Currency& from, const Currency& to, double rate);
-    double getRate(const Currency& from, const Currency& to) const override;
+    void setRate(const Currency& from, const Currency& to, Rate rate);
+    Rate getRate(const Currency& from, const Currency& to) const override;
 
     private: 
     CurrencyMap rates_;
@@ -49,7 +49,7 @@ class CurrencyConverterService
 
     void setConverter(std::unique_ptr<ICurrencyConverter> converter);
 
-    double getRate(const Currency& from, const Currency& to) const;
+    Rate getRate(const Currency& from, const Currency& to) const;
 
     private:
     std::unique_ptr<ICurrencyConverter> converter_;

@@ -6,13 +6,14 @@ std::size_t CurrencyPairHash::operator()(const std::pair<const Currency*, const 
 }
 
 // TODO get rid of floating point arithmetic
-void PresetCurrencyConverter::setRate(const Currency& from, const Currency& to, double rate)
+void PresetCurrencyConverter::setRate(const Currency& from, const Currency& to, Rate rate)
 {
-    rates_[{&from, &to}] = rate;
-    rates_[{&to, &from}] = 1.0 / rate;
+    rates_.insert_or_assign({&from, &to}, rate);
+    Rate inverseRate = Rate::from_parts(Rate::detail::getScale() / Rate::detail::getRaw(rate));
+    rates_.insert_or_assign({&to, &from}, inverseRate);
 }
 
-double PresetCurrencyConverter::getRate(const Currency& from, const Currency& to) const
+Rate PresetCurrencyConverter::getRate(const Currency& from, const Currency& to) const
 {
     auto it = rates_.find({&from, &to});
     if (it == rates_.end())
@@ -31,7 +32,7 @@ void CurrencyConverterService::setConverter(std::unique_ptr<ICurrencyConverter> 
     converter_ = std::move(converter);
 }
 
-double CurrencyConverterService::getRate(const Currency& from, const Currency& to) const
+Rate CurrencyConverterService::getRate(const Currency& from, const Currency& to) const
 {
     if (!converter_)
         throw std::runtime_error("No currency converter set");

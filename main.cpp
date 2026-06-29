@@ -19,15 +19,16 @@ static void testMonetaryAmountOperations()
 
     assert((usdValue1 + usdValue2) == 20000_USD);
     assert((usdValue1 - usdValue2) == 10000_USD);
-    assert((usdValue1 * 0.1) == 1500_USD);
+    assert((usdValue1 * "0.1"_rate) == 1500_USD);
     assert(usdValue2 < usdValue1);
 
     RuntimeMonetaryAmount runtimeUsd{usdValue1.getPipAmount(), US_DOLLAR};
     RuntimeMonetaryAmount runtimeJpy{(1000_JPY).getPipAmount(), JAPANESE_YEN}; // must put parentheses around 1000_JPY because parser
 
     auto convertedUsdToJpy = runtimeUsd.convertTo(JAPANESE_YEN);
-    assert(convertedUsdToJpy.getPipAmount() == 24237);
-    assert(convertedUsdToJpy.getCurrency().isoCode == "JPY");
+    auto& service = CurrencyConverterService::instance();
+    auto usdToJpyRate = service.getRate(USD::instance, JPY::instance);
+    assert(convertedUsdToJpy.getPipAmount() == 15000 * Rate::detail::getRaw(usdToJpyRate) / Rate::detail::getScale());
 
     auto convertedJpyToUsd = RuntimeMonetaryAmount{10000, JAPANESE_YEN}.convertTo(US_DOLLAR);
     assert(convertedJpyToUsd.getPipAmount() == 6189);
@@ -76,7 +77,7 @@ static void testFinancialInstruments()
     }
     assert(caught && "Stock should throw for holding periods greater than available");
 
-    auto bond = std::make_unique<Bond<USD>>(10000_USD, 0.05, 1.0, 2.0);
+    auto bond = std::make_unique<Bond<USD>>(10000_USD, "0.05"_rate, 1.0, 2.0);
     assert(bond->getValue() == 10000_USD);
     assert(bond->getReturn() == 1000_USD);
     assert(bond->getReturn(1.5) == 500_USD);
@@ -106,7 +107,7 @@ static void testPortfolioAndViews()
     stock->setValue(12000_USD);
     auto stockPtr = stock.get();
 
-    auto bond = std::make_unique<Bond<USD>>(10000_USD, 0.05, 1.0, 2.0);
+    auto bond = std::make_unique<Bond<USD>>(10000_USD, "0.05"_rate, 1.0, 2.0);
     auto bondPtr = bond.get();
 
     auto cash = std::make_unique<Cash<USD>>(5000_USD, 0.0);

@@ -2,32 +2,64 @@
 
 #include "money_amounts.h"
 
-constexpr Currency US_DOLLAR = {"US Dollar", "$", "USD", 10000 };
-constexpr Currency EURO = {"Euro", "€", "EUR", 10000 };
-constexpr Currency BRITISH_POUND = {"British Pound", "£", "GBP", 10000 };
-constexpr Currency JAPANESE_YEN = {"Japanese Yen", "¥", "JPY", 100 };
+constexpr Currency US_DOLLAR = {"US Dollar", "$", "USD", 1000000 };
+constexpr Currency EURO = {"Euro", "€", "EUR", 1000000 };
+constexpr Currency BRITISH_POUND = {"British Pound", "£", "GBP", 1000000 };
+constexpr Currency JAPANESE_YEN = {"Japanese Yen", "¥", "JPY", 10000 };
 
-DECLARE_CURRENCY_LITERAL(USDAmount, US_DOLLAR, USD)
-DECLARE_CURRENCY_LITERAL(EURAmount, EURO, EUR)
-DECLARE_CURRENCY_LITERAL(GBPAmount, BRITISH_POUND, GBP)
-DECLARE_CURRENCY_LITERAL(JPYAmount, JAPANESE_YEN, JPY)
 
 using USD = CurrencyTag<US_DOLLAR>;
 using EUR = CurrencyTag<EURO>;
 using GBP = CurrencyTag<BRITISH_POUND>;
 using JPY = CurrencyTag<JAPANESE_YEN>;
 
+
+
+using USDAmount = MonetaryAmount<USD>;
+constexpr USDAmount operator"" _USD(unsigned long long p)
+{
+    int unitPips {USD::instance.unitPips};
+    if (p > static_cast<unsigned long long>( std::numeric_limits<Pip>::max() / unitPips)) throw std::range_error("Literal exceeds Pip range");
+    return USDAmount(static_cast<Pip>(p * unitPips)); 
+}
+
+using EURAmount = MonetaryAmount<EUR>;
+constexpr EURAmount operator"" _EUR(unsigned long long p)
+{
+    int unitPips {EUR::instance.unitPips};
+    if (p > static_cast<unsigned long long>( std::numeric_limits<Pip>::max() / unitPips)) throw std::range_error("Literal exceeds Pip range");
+    return EURAmount(static_cast<Pip>(p * unitPips)); 
+}
+
+using GBPAmount = MonetaryAmount<GBP>;
+constexpr GBPAmount operator"" _GBP(unsigned long long p)
+{
+    int unitPips {GBP::instance.unitPips};
+    if (p > static_cast<unsigned long long>( std::numeric_limits<Pip>::max() / unitPips)) throw std::range_error("Literal exceeds Pip range");
+    return GBPAmount(static_cast<Pip>(p * unitPips)); 
+}
+
+using JPYAmount = MonetaryAmount<JPY>;
+constexpr JPYAmount operator"" _JPY(unsigned long long p)
+{
+    int unitPips {JPY::instance.unitPips};
+    if (p > static_cast<unsigned long long>( std::numeric_limits<Pip>::max() / unitPips)) throw std::range_error("Literal exceeds Pip range");
+    return JPYAmount(static_cast<Pip>(p * unitPips)); 
+}
+
+
+
 namespace CurrencyInit
 {
     inline void setupConversions()
     {
         PresetCurrencyConverter presetConverter;
-        presetConverter.setRate(EURO, US_DOLLAR,      1.1340);
-        presetConverter.setRate(EURO, JAPANESE_YEN,   183.35);
-        presetConverter.setRate(EURO, BRITISH_POUND,  0.86165);
-        presetConverter.setRate(US_DOLLAR, JAPANESE_YEN, 161.58);
-        presetConverter.setRate(BRITISH_POUND, JAPANESE_YEN, 212.80); // EUR/GBP * EUR/JPY inverse
-        presetConverter.setRate(US_DOLLAR, BRITISH_POUND, 0.76);
+        presetConverter.setRate(EURO, US_DOLLAR,             Rate::from_parts(113910255));
+        presetConverter.setRate(EURO, JAPANESE_YEN,          Rate::from_parts(18424420624));
+        presetConverter.setRate(EURO, BRITISH_POUND,         Rate::from_parts(86270025));
+        presetConverter.setRate(US_DOLLAR, JAPANESE_YEN,     Rate::from_parts(16175514541));
+        presetConverter.setRate(BRITISH_POUND, JAPANESE_YEN, Rate::from_parts(21353948904));
+        presetConverter.setRate(US_DOLLAR, BRITISH_POUND,    Rate::from_parts(75736071));
         
         CurrencyConverterService::instance().setConverter(std::make_unique<PresetCurrencyConverter>(std::move(presetConverter)));
     }
