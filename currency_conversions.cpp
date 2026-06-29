@@ -9,7 +9,8 @@ std::size_t CurrencyPairHash::operator()(const std::pair<const Currency*, const 
 void PresetCurrencyConverter::setRate(const Currency& from, const Currency& to, Rate rate)
 {
     rates_.insert_or_assign({&from, &to}, rate);
-    Rate inverseRate = Rate::from_parts(Rate::detail::getScale() / Rate::detail::getRaw(rate));
+    __int128_t amount = Rate::detail::getScale() * Rate::detail::getScale() / Rate::detail::getRaw(rate);
+    Rate inverseRate = Rate::from_parts(amount);
     rates_.insert_or_assign({&to, &from}, inverseRate);
 }
 

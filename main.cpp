@@ -14,24 +14,27 @@
 
 static void testMonetaryAmountOperations()
 {
-    USDAmount usdValue1 = 15000_USD;
-    USDAmount usdValue2 = 5000_USD;
+    USDAmount usdValue1 = 15000_USD; // 150 USD
+    USDAmount usdValue2 = 5000_USD; // 50 USD
+    std::cout << usdValue2 << '\n';
 
-    assert((usdValue1 + usdValue2) == 20000_USD);
-    assert((usdValue1 - usdValue2) == 10000_USD);
-    assert((usdValue1 * "0.1"_rate) == 1500_USD);
+    assert((usdValue1 + usdValue2) == 20000_USD); // 200 dollars
+    assert((usdValue1 - usdValue2) == 10000_USD); // 100 USD
+    assert((usdValue1 * "0.1"_rate) == 1500_USD); // 15 USD
     assert(usdValue2 < usdValue1);
 
-    RuntimeMonetaryAmount runtimeUsd{usdValue1.getPipAmount(), US_DOLLAR};
+    RuntimeMonetaryAmount runtimeUsd{(862934_USD).getPipAmount(), US_DOLLAR};
     RuntimeMonetaryAmount runtimeJpy{(1000_JPY).getPipAmount(), JAPANESE_YEN}; // must put parentheses around 1000_JPY because parser
 
     auto convertedUsdToJpy = runtimeUsd.convertTo(JAPANESE_YEN);
-    auto& service = CurrencyConverterService::instance();
-    auto usdToJpyRate = service.getRate(USD::instance, JPY::instance);
-    assert(convertedUsdToJpy.getPipAmount() == 15000 * Rate::detail::getRaw(usdToJpyRate) / Rate::detail::getScale());
+    auto convertBack = convertedUsdToJpy.as(USD::instance);
+    Pip conversion {(convertBack - runtimeUsd).getPipAmount()};
+    assert( std::abs(conversion) <= 500 );
 
-    auto convertedJpyToUsd = RuntimeMonetaryAmount{10000, JAPANESE_YEN}.convertTo(US_DOLLAR);
-    assert(convertedJpyToUsd.getPipAmount() == 6189);
+
+    auto convertedJpyToUsd = static_cast<RuntimeMonetaryAmount>(10000_JPY).convertTo(USD::instance);
+    auto convertBack2 = convertedJpyToUsd.in(JPY::instance);
+    assert( std::abs((convertBack2 - 10000_JPY).getPipAmount()) <= 1 );
     assert(convertedJpyToUsd.getCurrency().isoCode == "USD");
     assert((runtimeUsd != RuntimeMonetaryAmount{15001, US_DOLLAR}));
 

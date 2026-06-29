@@ -15,19 +15,11 @@ using Years = double;
 class  RuntimeMonetaryAmount
 {
 public: 
-    
     RuntimeMonetaryAmount(Pip p, const Currency& c) : pipAmount(p), currency(&c) {}
     Pip getPipAmount() const noexcept { return pipAmount; }
     const Currency& getCurrency() const noexcept { return *currency; }
 
-    RuntimeMonetaryAmount convertTo(const Currency& targetCurrency) const
-    {
-        if (currency == &targetCurrency) return *this;
-        const CurrencyConverterService& service {CurrencyConverterService::instance()};
-        Rate rate {service.getRate(*currency, targetCurrency)};
-        Pip amount = (targetCurrency.unitPips * getPipAmount() * Rate::detail::getRaw(rate)) / getCurrency().unitPips;
-        return RuntimeMonetaryAmount{amount, targetCurrency};
-    }
+    RuntimeMonetaryAmount convertTo(const Currency& targetCurrency) const;
 
     RuntimeMonetaryAmount in(const Currency& targetCurrency) const { return convertTo(targetCurrency); }
     RuntimeMonetaryAmount as(const Currency& targetCurrency) const { return convertTo(targetCurrency); }
@@ -202,8 +194,18 @@ inline RuntimeMonetaryAmount operator*(std::int64_t scalarVal, const RuntimeMone
 {
     return RuntimeMonetaryAmount(rhs.getPipAmount() * scalarVal, rhs.getCurrency());
 }
-
-
+inline RuntimeMonetaryAmount RuntimeMonetaryAmount::convertTo(const Currency& targetCurrency) const
+{
+        if (currency == &targetCurrency) return *this;
+        const CurrencyConverterService& service {CurrencyConverterService::instance()};
+        Rate rate {service.getRate(*currency, targetCurrency)};
+//        __int128_t amount = (static_cast<__int128_t>(targetCurrency.unitPips) * getPipAmount() * Rate::detail::getRaw(rate)) / getCurrency().unitPips;
+        __int128_t amount = getPipAmount();     
+        amount  *= Rate::detail::getRaw(rate);
+        amount  *= targetCurrency.unitPips;
+        amount /= (Rate::detail::getScale() * currency->unitPips);
+        return RuntimeMonetaryAmount{static_cast<Pip>(amount), targetCurrency};
+}
 inline bool operator==(const RuntimeMonetaryAmount& lhs, const RuntimeMonetaryAmount& rhs)
 {
     validateCurrency(lhs, rhs);
@@ -244,28 +246,28 @@ inline bool operator>=(const RuntimeMonetaryAmount& lhs, const RuntimeMonetaryAm
 template <typename T_CurrencyTag>
 inline RuntimeMonetaryAmount operator+(const RuntimeMonetaryAmount& lhs, const MonetaryAmount<T_CurrencyTag>& rhs)
 {
-    assert(lhs.getCurrency() == T_CurrencyTag::instance);
+    assert(&lhs.getCurrency() == &T_CurrencyTag::instance);
     return lhs + static_cast<RuntimeMonetaryAmount>(rhs);
 }
 
 template <typename T_CurrencyTag>
 inline RuntimeMonetaryAmount operator+(const MonetaryAmount<T_CurrencyTag>& lhs, const RuntimeMonetaryAmount& rhs)
 {
-    assert(rhs.getCurrency() == T_CurrencyTag::instance);
+    assert(&rhs.getCurrency() == &T_CurrencyTag::instance);
     return static_cast<RuntimeMonetaryAmount>(lhs) + rhs;
 }
 
 template <typename T_CurrencyTag>
 inline RuntimeMonetaryAmount operator-(const RuntimeMonetaryAmount& lhs, const MonetaryAmount<T_CurrencyTag>& rhs)
 {
-    assert(lhs.getCurrency() == T_CurrencyTag::instance);
+    assert(&lhs.getCurrency() == &T_CurrencyTag::instance);
     return lhs - static_cast<RuntimeMonetaryAmount>(rhs);
 }
 
 template <typename T_CurrencyTag>
 inline RuntimeMonetaryAmount operator-(const MonetaryAmount<T_CurrencyTag>& lhs, const RuntimeMonetaryAmount& rhs)
 {
-    assert(rhs.getCurrency() == T_CurrencyTag::instance);
+    assert(&rhs.getCurrency() == &T_CurrencyTag::instance);
     return static_cast<RuntimeMonetaryAmount>(lhs) - rhs;
 }
 

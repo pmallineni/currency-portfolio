@@ -63,7 +63,7 @@ class Rate
         std::int64_t fracVal  = sv_to_int(frac.substr(0, Rate::scalePower));
         std::size_t digits = frac.size();
 
-        while (digits < 8)
+        while (digits < scalePower)
         {
             fracVal *= 10;
             digits++;
