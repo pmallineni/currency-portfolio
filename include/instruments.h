@@ -85,7 +85,7 @@ class Stock : public TypedFinancialInstrument<T_CurrencyTag>
     }
     
     void setValue(MonetaryAmount<T_CurrencyTag> newValue) {value_ = newValue;}
-    void addYearsToHoldingPeriod(Years years) {holdingPeriod_ += years;}
+    void addYearsToHoldingPeriod(Years years) override {holdingPeriod_ += years;}
     private: 
     MonetaryAmount<T_CurrencyTag> priceBought_;
     MonetaryAmount<T_CurrencyTag> value_;
@@ -107,7 +107,7 @@ class Bond : public TypedFinancialInstrument<T_CurrencyTag>
     principal_(principal), value_(principal), couponRate_(couponRate), payoutPeriod_(payoutPeriod), holdingPeriod_(holdingPeriod), name_(name) {}
 
     MonetaryAmount<T_CurrencyTag> getSpecificValue() const override {return value_;} // maybe modifiable if I include buy and sell
-    MonetaryAmount<T_CurrencyTag> getSpecificReturn(Years holdingPeriod) const
+    MonetaryAmount<T_CurrencyTag> getSpecificReturn(Years holdingPeriod) const override
     {
         if (holdingPeriod < 0) throw (std::range_error("holdingPeriod for a financial return cannot be less than 0"));
 
@@ -121,7 +121,7 @@ class Bond : public TypedFinancialInstrument<T_CurrencyTag>
 
     std::string_view getName() const noexcept override {return name_;}
 
-    void addYearsToHoldingPeriod(Years years) {holdingPeriod_ += years;}
+    void addYearsToHoldingPeriod(Years years) override {holdingPeriod_ += years;}
 
 
     private:
@@ -144,7 +144,7 @@ class Cash : public TypedFinancialInstrument<T_CurrencyTag>
     Cash(MonetaryAmount<T_CurrencyTag> amount, Years holdingPeriod = 0) : value_(amount), holdingPeriod_(holdingPeriod) {}
 
     MonetaryAmount<T_CurrencyTag> getSpecificValue()  const noexcept override {return value_;}
-    MonetaryAmount<T_CurrencyTag> getSpecificReturn(Years holdingPeriod) const
+    MonetaryAmount<T_CurrencyTag> getSpecificReturn(Years holdingPeriod) const override
     {
         return getSpecificReturn();
     }

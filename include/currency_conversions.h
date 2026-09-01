@@ -14,6 +14,7 @@ class ICurrencyConverter
 {
     public:
     virtual Rate getRate(const Currency& from, const Currency& to) const = 0;
+    virtual bool hasRate(const Currency& from, const Currency& to) const = 0; 
     virtual ~ICurrencyConverter() = default;
 };
 
@@ -26,7 +27,7 @@ class PresetCurrencyConverter : public ICurrencyConverter
     PresetCurrencyConverter() = default;
     void setRate(const Currency& from, const Currency& to, Rate rate);
     Rate getRate(const Currency& from, const Currency& to) const override;
-
+    bool hasRate(const Currency& from, const Currency& to) const override;
     private: 
     CurrencyMap rates_;
     
@@ -50,7 +51,7 @@ class CurrencyConverterService
     void setConverter(std::unique_ptr<ICurrencyConverter> converter);
 
     Rate getRate(const Currency& from, const Currency& to) const;
-
+    bool hasRate(const Currency& from, const Currency& to) const;
     private:
     std::unique_ptr<ICurrencyConverter> converter_;
     CurrencyConverterService() = default;

@@ -5,7 +5,7 @@
 #include <stdexcept>
 #include <cmath> 
 #include <iostream>
-
+#include <cassert>
 #include "currency_conversions.h"
 
 using Pip = std::int64_t;
@@ -50,12 +50,8 @@ public:
     Pip getPipAmount() const noexcept { return pipAmount; } 
     constexpr const Currency& getCurrency() const noexcept { return currency; }    
     
-    // TODO: Implement a more accurate percentage calculation that factors in the currency's unitPips and rounding rules for the specific currency
-    // If making changes, make change to RuntimeMonetaryAmount::percentOf as well
     constexpr MonetaryAmount percentOf(Rate rate) const { 
         __int128_t intermediatePips = static_cast<__int128_t>(pipAmount) * Rate::detail::getRaw(rate);
-//        __int128_t roundOffset = Rate::detail::getScale();
-//        if (intermediatePips < 0) roundOffset = -roundOffset;
         Pip finalValue = static_cast<Pip>((intermediatePips) / Rate::detail::getScale());
         return MonetaryAmount{finalValue};
     }
@@ -76,10 +72,8 @@ public:
     constexpr MonetaryAmount& operator*=(Rate rate)
     {
         __int128_t intermediatePips = static_cast<__int128_t>(pipAmount) * Rate::detail::getRaw(rate);
-//        __int128_t roundOffset = Rate::detail::getScale();
-//        if (intermediatePips < 0) roundOffset = -roundOffset;
-        Pip finalValue = static_cast<Pip>((intermediatePips) / Rate::SCALE);
-        this->getPipAmount = finalValue;
+        Pip finalValue = static_cast<Pip>((intermediatePips) / Rate::detail::getScale());
+        this->pipAmount = finalValue;
         return *this;
     }
 
@@ -154,8 +148,6 @@ inline RuntimeMonetaryAmount operator-(const RuntimeMonetaryAmount& lhs, const R
 inline RuntimeMonetaryAmount getPercentOf(const RuntimeMonetaryAmount& lhs, Rate rate) 
 {
     __int128_t intermediatePips = static_cast<__int128_t>(lhs.getPipAmount()) * Rate::detail::getRaw(rate);
-//    __int128_t roundOffset = Rate::detail::getScale();
-//    if (intermediatePips < 0) roundOffset = -roundOffset;
     Pip finalValue = static_cast<Pip>((intermediatePips) / Rate::detail::getScale());
     return RuntimeMonetaryAmount{finalValue, lhs.getCurrency()};
 }
@@ -172,8 +164,6 @@ inline RuntimeMonetaryAmount operator*(Rate lhs, const RuntimeMonetaryAmount& rh
 inline RuntimeMonetaryAmount& RuntimeMonetaryAmount::operator*=(Rate rate)
 {
     __int128_t intermediatePips = static_cast<__int128_t>(this->pipAmount) * Rate::detail::getRaw(rate);
-//    __int128_t roundOffset = Rate::detail::getScale();
-//    if (intermediatePips < 0) roundOffset = -roundOffset;
     Pip finalValue = static_cast<Pip>((intermediatePips) / Rate::detail::getScale());
     this->pipAmount = finalValue;
     return *this;
@@ -198,26 +188,31 @@ inline RuntimeMonetaryAmount RuntimeMonetaryAmount::convertTo(const Currency& ta
 {
         if (currency == &targetCurrency) return *this;
         const CurrencyConverterService& service {CurrencyConverterService::instance()};
-        try
+        if (service.hasRate(*currency, targetCurrency))
         {
             Rate rate {service.getRate(*currency, targetCurrency)};
-            __int128_t amount = getPipAmount();     
-            amount  *= Rate::detail::getRaw(rate);
-            amount  *= targetCurrency.unitPips;
+            __int128_t amount = getPipAmount();
+            amount *= Rate::detail::getRaw(rate);
+            amount *= targetCurrency.unitPips;
             amount /= (Rate::detail::getScale() * currency->unitPips);
             return RuntimeMonetaryAmount{static_cast<Pip>(amount), targetCurrency};
         }
-        catch (std::runtime_error& e)
+        else if (service.hasRate(targetCurrency, *currency))
         {
             Rate rate {service.getRate(targetCurrency, *currency)};
-            __int128_t amount = getPipAmount();  
+            __int128_t amount = getPipAmount();
             amount *= targetCurrency.unitPips;
             amount *= Rate::detail::getScale();
-            amount /= currency-> unitPips;
+            amount /= currency->unitPips;
             amount /= Rate::detail::getRaw(rate);
             return RuntimeMonetaryAmount{static_cast<Pip>(amount), targetCurrency};
-            
         }
+        else
+        {
+            throw std::runtime_error("No conversion rate registered between currencies");
+        }
+        
+       
 
 }
 inline bool operator==(const RuntimeMonetaryAmount& lhs, const RuntimeMonetaryAmount& rhs)
