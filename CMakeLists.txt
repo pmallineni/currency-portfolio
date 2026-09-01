@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     # For GCC/Clang: Use DWARF version 4 instead of 5, which is much more stable with CodeLLDB
     add_compile_options(-gdwarf-4)
-    
+
     # OR if it keeps crashing, limit debug info to line tables (stops variable parsing crashes entirely)
     # add_compile_options(-g1)
 endif()
@@ -22,3 +22,12 @@ add_executable(Executable
     src/currency_conversions.cpp
     )
 
+add_executable(Tests
+    src/tests.cpp
+    src/portfolio_views.cpp
+    src/portfolio.cpp
+    src/currency_conversions.cpp
+    )
+
+enable_testing()
+add_test(NAME UnitTests COMMAND Tests)
